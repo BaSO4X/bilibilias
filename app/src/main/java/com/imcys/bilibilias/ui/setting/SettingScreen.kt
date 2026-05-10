@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.outlined.AirplaneTicket
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.ArrowCircleUp
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Edit
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -58,10 +60,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavKey
 import com.baidu.mobstat.StatService
+import com.imcys.bilibilias.BuildConfig
 import com.imcys.bilibilias.R
+import com.imcys.bilibilias.common.utils.openLink
 import com.imcys.bilibilias.datastore.AppSettings
 import com.imcys.bilibilias.datastore.AppSettings.AgreePrivacyPolicyState.Agreed
 import com.imcys.bilibilias.datastore.AppSettings.AgreePrivacyPolicyState.Refuse
+import com.imcys.bilibilias.network.ApiStatus
 import com.imcys.bilibilias.ui.PrivacyPolicyDialog
 import com.imcys.bilibilias.ui.PrivacyPolicyRefuseDialog
 import com.imcys.bilibilias.ui.setting.platform.ParsePlatformRoute
@@ -111,8 +116,8 @@ fun SettingScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val vm = koinViewModel<SettingViewModel>()
+    val lastGitCommitInfo by vm.lastGitCommitInfo.collectAsStateWithLifecycle()
     val appSettings by vm.appSettings.collectAsStateWithLifecycle(initialValue = AppSettings.getDefaultInstance())
-    val haptics = LocalHapticFeedback.current
     var showLogoutDialog by remember { mutableStateOf(false) }
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
@@ -206,7 +211,6 @@ fun SettingScreen(
                     description = "使用桌面壁纸颜色作为主题",
                     checked = appSettings.enabledDynamicColor,
                 ) { check ->
-                    haptics.switchHapticFeedback(check)
                     vm.updateEnabledDynamicColor(check)
                 }
             }
@@ -292,6 +296,30 @@ fun SettingScreen(
                     onClick = onToAbout
                 )
 
+            }
+
+
+            item {
+                BaseSettingsItem(
+                    painter = rememberVectorPainter(Icons.Outlined.Update),
+                    text = "版本跟踪",
+                    description = {
+                        when (lastGitCommitInfo.status) {
+                            ApiStatus.SUCCESS -> {
+                                Text("${lastGitCommitInfo.data?.tipMsg}")
+                            }
+                            ApiStatus.ERROR -> {
+                                Text("网络异常，无法跟踪版本")
+                            }
+                            else -> {
+                                Text("正在检查可用版本中...")
+                            }
+                        }
+                    },
+                    onClick = {
+                        context.openLink("https://github.com/1250422131/bilibilias")
+                    }
+                )
             }
 
 
